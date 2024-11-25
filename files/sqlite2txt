@@ -1,0 +1,45 @@
+#!/bin/bash
+
+command=$0;
+
+# ------------------------------------------------------------------------- printout functions -------
+
+GREEN='\033[1;32m'
+RED='\033[1;31m'
+NOCOLOR='\033[0m'
+
+die() {
+    local msg=${1:+ ($1)}  # wrap the message in parentheses if provided (and add a leading space)
+    echo -e " ${RED}Failed${msg}, aborting!${NOCOLOR}"
+    exit 1
+}
+
+echo_done() {
+    echo -e " ${GREEN}done${NOCOLOR}"
+}
+
+# ------------------------------------------------------------------------- process CLI arguments ----
+
+usage() {
+    echo "${command}: <db-basename>" 1>&2
+    exit 1
+}
+
+[ "$#" -eq 1 ] || usage
+dbfile="$1.db"
+datafile="$1.data"
+schemafile="$1.schema"
+
+# ------------------------------------------------------------------------- main flow ----------------
+
+echo -n "Checking access to database file:"
+[ -e "${dbfile}" ] || die "'${dbfile}' not accessible"
+echo_done
+
+Echo "Exporting database..."
+echo -n "  Schema to '${schemafile}':"
+(sqlite3 "${dbfile}" .schema > "${schemafile}") >/dev/null 2>&1 || die "$?"
+echo_done
+echo -n "  Data to '${datafile}':"
+(sqlite3 "${dbfile}" .dump > "${datafile}") >/dev/null 2>&1 || die "$?"
+echo_done

@@ -1,0 +1,75 @@
+#!/bin/bash
+
+command=$0;
+
+# ------------------------------------------------------------------------- printout functions -------
+
+GREEN='\033[1;32m'
+RED='\033[1;31m'
+YELLOW='\033[1;33m'
+NOCOLOR='\033[0m'
+
+die() {
+    local msg=${1:+ ($1)}  # wrap the message in parentheses if provided (and add a leading space)
+    echo -e " ${RED}Failed${msg}, aborting!${NOCOLOR}"
+    exit 1
+}
+
+echo_done() {
+    echo -e " ${GREEN}done${NOCOLOR}"
+}
+
+echo_skipping() {
+    local msg=${1:+$1, }
+    echo -e " ${YELLOW}${msg}skipping${NOCOLOR}"
+}
+
+# ------------------------------------------------------------------------- process CLI arguments ----
+
+usage() {
+    echo "${command}: <db-basename>" 1>&2
+    exit 1
+}
+
+[ "$#" -eq 1 ] || usage
+dbfile="$1.db"
+datafile="$1.data"
+schemafile="$1.schema"
+
+current_time=`date +%s`
+newdbfile="${current_time}.db"
+backupfile="${1}.${current_time}"
+
+# ------------------------------------------------------------------------- main flow ----------------
+
+# Sanity checks
+echo "Checking access to files..."
+echo -n "  Schema:"
+[ -e "${schemafile}" ] || die "'${schemafile}' not accessible"
+echo_done
+echo -n "  Data:"
+[ -e "${datafile}" ] || die "'${datafile}' not accessible"
+echo_done
+
+# Create a new database
+echo "Creating new database file in '${newdbfile}'..."
+echo -n "  Schema:"
+(sqlite3 "${newdbfile}" < "${schemafile}") >/dev/null 2>&1 || die "$?"
+echo_done
+echo -n "  Data:"
+(sqlite3 "${newdbfile}" < "${datafile}") >/dev/null 2>&1 || die "$?"
+echo_done
+
+# Backup database, if exists
+echo -n "Backing up database file to '${backupfile}:"
+if [ -e "$dbfile" ]; then
+    (/bin/cp "${dbfile}" "${backupfile}") >/dev/null 2>&1 || die "$?"
+    echo_done
+else
+    echo_skipping "'${dbfile}' not found"
+fi
+
+# Promote the newly created database
+echo -n "Renaming '${newdbfile}' to '${dbfile}':"
+(/bin/mv "${newdbfile}" "${dbfile}") >/dev/null 2>&1 || die "$?"
+echo_done
