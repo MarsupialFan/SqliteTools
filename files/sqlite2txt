@@ -36,10 +36,18 @@ echo -n "Checking access to database file:"
 [ -e "${dbfile}" ] || die "'${dbfile}' not accessible"
 echo_done
 
-Echo "Exporting database..."
+echo "Exporting database..."
+
+# Export the schema.
+# Note: we comment out the line creating the sqlite_sequence table, since this line causes txt2sqlite
+# to barf (this table is internal to sqlite and is created automatically whenever there's an
+# AUTOINCREMENT field).
 echo -n "  Schema to '${schemafile}':"
-(sqlite3 "${dbfile}" .schema > "${schemafile}") >/dev/null 2>&1 || die "$?"
+internal_table_line='CREATE TABLE sqlite_sequence(name,seq);'
+(sqlite3 "${dbfile}" .schema | sed "s/^\(${internal_table_line}\)\$/--\1/" > "${schemafile}") >/dev/null 2>&1 || die "$?"
 echo_done
+
+# Export the data.
 echo -n "  Data to '${datafile}':"
 (sqlite3 "${dbfile}" .dump > "${datafile}") >/dev/null 2>&1 || die "$?"
 echo_done
