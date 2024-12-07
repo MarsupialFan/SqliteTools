@@ -38,7 +38,7 @@ schemafile="$1.schema"
 
 current_time=`date +%s`
 newdbfile="${current_time}.db"
-backupfile="${1}.${current_time}"
+backupfile="${dbfile}.${current_time}"
 
 # ------------------------------------------------------------------------- main flow ----------------
 
