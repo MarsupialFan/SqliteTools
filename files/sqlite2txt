@@ -21,14 +21,14 @@ echo_done() {
 # ------------------------------------------------------------------------- process CLI arguments ----
 
 usage() {
-    echo "${command}: <db-basename>" 1>&2
+    echo "${command}: <db-filename>" 1>&2
     exit 1
 }
 
 [ "$#" -eq 1 ] || usage
-dbfile="$1.db"
-datafile="$1.data"
-schemafile="$1.schema"
+dbfile="$1"
+datafile="${dbfile}-data"
+schemafile="${dbfile}-schema"
 
 # ------------------------------------------------------------------------- main flow ----------------
 
